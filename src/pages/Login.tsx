@@ -1,17 +1,80 @@
 import { useState } from "react";
+import { callApi } from "../services/authService";
+
+interface LoginResponse {
+    user: {
+        id: string;
+        username: string;
+        role: string;
+    };
+    token: string;
+    success: boolean;
+    message: string;
+}
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!username.trim() || !password.trim()) {
+            alert('Please enter both username and password');
+            return;
+        }
+
+        try {
+            const res = await callApi<LoginResponse>(
+                "/api/login",
+                "POST",
+                { username, password }
+            );
+
+            console.log("Response:", res);
+
+            if (res.success && res.token && res.user) {
+                localStorage.setItem("token", res.token);
+
+                localStorage.setItem(
+                    "user",
+                    JSON.stringify({
+                        id: res.user.id,
+                        username: res.user.username,
+                        role: res.user.role
+                    })
+                );
+
+                alert("Login Success");
+
+                // Redirect based on role
+                if (res.user.role === "admin") {
+                    window.location.href = "/admin";
+                } else {
+                    window.location.href = "/dashboard";
+                }
+
+            } else {
+                alert(res.message);
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Server Error ");
+        }
+    };
+
+
 
     return (
-        <div
-            className="container-fluid min-vh-100 d-flex align-items-center"
+        <div className="container-fluid min-vh-100 d-flex align-items-center"
             style={{ backgroundColor: "#f8f9fa" }}
         >
             <div className="container">
                 <div className="row shadow rounded-4 overflow-hidden bg-white">
 
-                    {/* Left Side - Shopping Banner */}
+                    {/* Left Side */}
                     <div
                         className="col-md-6 d-none d-md-flex flex-column justify-content-center p-5"
                         style={{
@@ -30,24 +93,24 @@ const Login = () => {
                         </ul>
                     </div>
 
-                    {/* Right Side - Login Form */}
+                    {/* Right Side */}
                     <div className="col-md-6 p-5">
                         <h4 className="mb-4 text-center text-primary fw-bold">
                             Login to your account
                         </h4>
 
-                        <form>
-                            {/* Username */}
+                        <form onSubmit={handleLogin}>
                             <div className="mb-3">
                                 <label className="form-label fw-semibold">Username</label>
                                 <input
                                     type="text"
                                     className="form-control"
                                     placeholder="Enter username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                 />
                             </div>
 
-                            {/* Password */}
                             <div className="mb-3">
                                 <label className="form-label fw-semibold">Password</label>
                                 <div className="input-group">
@@ -55,6 +118,8 @@ const Login = () => {
                                         type={showPassword ? "text" : "password"}
                                         className="form-control"
                                         placeholder="Enter password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                     />
                                     <button
                                         type="button"
@@ -66,7 +131,6 @@ const Login = () => {
                                 </div>
                             </div>
 
-                            {/* Buttons - Bootstrap Only */}
                             <button type="submit" className="btn btn-primary w-100 mb-2">
                                 Login
                             </button>
