@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
+import Customer from "./pages/Customers";
 
 const App = () => {
   return (
@@ -27,6 +28,14 @@ const App = () => {
           element={
             <ProtectedRoute adminOnly={true}>
               <Admin />
+            </ProtectedRoute>
+          }
+        />
+                <Route
+          path="/admin/customer-control"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <Customer />
             </ProtectedRoute>
           }
         />

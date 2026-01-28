@@ -1,13 +1,25 @@
 import React from "react";
 import { Nav } from "react-bootstrap";
+import { NavLink } from "react-router-dom";
 
 interface SidebarProps {
   role: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ role }) => {
-  const adminLinks = ["Dashboard", "Users", "Settings"];
-  const userLinks = ["Home", "Orders", "Profile"];
+  // Define links with paths
+  const adminLinks = [
+    { name: "Dashboard", path: "/admin" },
+    { name: "Customer", path: "/admin/customer-control" },
+    { name: "Product", path: "/admin/products" },
+    { name: "Settings", path: "/admin/settings" },
+  ];
+
+  const userLinks = [
+    { name: "Home", path: "/dashboard" },
+    { name: "Orders", path: "/orders" },
+    { name: "Profile", path: "/profile" },
+  ];
 
   const links = role === "admin" ? adminLinks : userLinks;
 
@@ -19,14 +31,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       <h4 className="text-center">{role === "admin" ? "Admin" : "Customer"}</h4>
       <Nav className="flex-column">
         {links.map((link) => (
-          <Nav.Link
-            key={link}
-            href="#"
-            className="text-white"
+          <NavLink
+            key={link.name}
+            to={link.path}
+            className={({ isActive }: { isActive: boolean }) =>
+              isActive ? "nav-link text-white active-link" : "nav-link text-white"
+            }
             style={{ margin: "5px 0" }}
           >
-            {link}
-          </Nav.Link>
+            {link.name}
+          </NavLink>
         ))}
       </Nav>
     </div>
