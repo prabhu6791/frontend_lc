@@ -1,17 +1,13 @@
-import axios from "axios";
+import axiosInstance from "./axiosInstance";
 
-// Backend base URL
-const BASE_URL = "http://localhost:3002";
-
-// Common API function (for all APIs)
 export const callApi = async <T>(
   api: string,
   method: "GET" | "POST" | "PUT" | "DELETE" = "POST",
   data?: any
 ): Promise<T> => {
   try {
-    const res = await axios({
-      url: BASE_URL + api,
+    const res = await axiosInstance({
+      url: api,
       method,
       data,
     });

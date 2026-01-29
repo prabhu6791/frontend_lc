@@ -1,32 +1,278 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Modal } from "antd";
+import { callApi } from "../services/authService";
+
+interface CustomerForm {
+    name: string;
+    email: string;
+    username: string;
+    password: string;
+}
+
+interface Customer {
+    password: string;
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    role?: string;
+    created_at?: string; // optional if API returns it
+}
+
+interface CustomerResponse {
+    success: boolean;
+    message: string;
+    count?: number;
+    data?: Customer[];
+}
 
 const Customer: React.FC = () => {
     const user = localStorage.getItem("user");
     const role = user ? JSON.parse(user).role : "customer";
+
+    const [open, setOpen] = useState<boolean>(false);
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
+
+    const [formData, setFormData] = useState<CustomerForm>({
+        name: "",
+        email: "",
+        username: "",
+        password: "",
+    });
+
+    useEffect(() => {
+        loadCustomers();
+    }, []);
+
+    const loadCustomers = async () => {
+        try {
+            const res = await callApi<CustomerResponse>("/api/get-all-customers", "GET");
+            if (!res.success) throw new Error(res.message);
+            setCustomers(res.data || []);
+        } catch (error) {
+            console.error("Error loading customers:", error);
+            alert("Failed to load customers. Please try again later.");
+        }
+    };
+
+    const showModal = (customer?: Customer) => {
+        if (customer) {
+            setFormData({
+                name: customer.name,
+                email: customer.email,
+                username: customer.username,
+                password: customer.password,
+            });
+            setEditingCustomerId(customer.id);
+        } else {
+            setFormData({ name: "", email: "", username: "", password: "" });
+            setEditingCustomerId(null);
+        }
+        setOpen(true);
+    };
+
+    const handleCancel = () => {
+        setFormData({ name: "", email: "", username: "", password: "" });
+        setEditingCustomerId(null);
+        setOpen(false);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.name || !formData.email || !formData.username) {
+            alert("Please fill all required fields");
+            return;
+        }
+
+        try {
+            const apiPath = editingCustomerId ? `/api/edit-customers/${editingCustomerId}` : "/api/customers";
+            const method = editingCustomerId ? "PUT" : "POST";
+
+            const res = await callApi<CustomerResponse>(apiPath, method, formData);
+
+            if (res.success) {
+                alert(editingCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully");
+                handleCancel();
+                loadCustomers();
+            } else {
+                alert(res.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Server Error");
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!window.confirm("Are you sure you want to delete this customer?")) return;
+
+        try {
+            const res = await callApi<CustomerResponse>(`/api/customers/${id}`, "DELETE");
+            if (res.success) {
+                alert("Customer Deleted Successfully");
+                loadCustomers();
+            } else {
+                alert(res.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Server Error");
+        }
+    };
 
     return (
         <Layout role={role}>
             <div className="container mt-4">
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h1>Customer Page</h1>
-                    <button className="btn btn-primary">Add Customer</button>
+                    <button className="btn btn-primary" onClick={() => showModal()}>
+                        Add Customer
+                    </button>
                 </div>
-                <table className="table table-striped table-bordered">
-                    <thead className="thead-dark">
-                        <tr>
-                            <th>S.no</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Password</th>
-                            <th>Created Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
+
+                <div className="table-responsive">
+                    <table className="table table-striped table-bordered">
+                        <thead className="thead-dark">
+                            <tr>
+                                <th>S No</th>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Created Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {customers.map((customer, index) => (
+                                <tr key={customer.id}>
+                                    <td>{index + 1}</td>
+                                    <td>{customer.name}</td>
+                                    <td>{customer.username}</td>
+                                    <td>{customer.email}</td>
+                                    <td>
+                                        {customer.created_at
+                                            ? new Date(customer.created_at).toLocaleDateString("en-GB")
+                                            : "-"}
+                                    </td>
+                                    <td>
+                                        <button className="btn btn-sm btn-warning me-2" onClick={() => showModal(customer)}>
+                                            Edit
+                                        </button>
+                                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(customer.id)}>
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {customers.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="text-center">
+                                        No customers found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <Modal
+                title={editingCustomerId ? "Edit Customer" : "Add Customer"}
+                open={open}
+                onCancel={handleCancel}
+                footer={null}
+                maskClosable={false}
+                keyboard={false}
+            >
+                <form onSubmit={handleSubmit} autoComplete="off">
+                    <div className="mb-3">
+                        <label className="form-label">
+                            Customer Name <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="name"
+                            className="form-control"
+                            value={formData.name}
+                            onChange={handleChange}
+                            placeholder="Enter customer name"
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">
+                            Email <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="email"
+                            name="email"
+                            className="form-control"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="Enter email address"
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">
+                            Username <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="username"
+                            className="form-control"
+                            value={formData.username}
+                            onChange={handleChange}
+                            placeholder="Enter username"
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label">
+                            Password <span className="text-danger">*</span>
+                        </label>
+                        <div className="input-group">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                className="form-control"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Enter password"
+                                required={!editingCustomerId}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? "Hide" : "Show"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2">
+                        <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                            {editingCustomerId ? "Update" : "Save"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </Layout>
     );
 };
