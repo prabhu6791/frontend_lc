@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Admin from "./pages/Admin";
+import Dashboard from "./pages/customer/Dashboard";
+import Admin from "./pages/admin/Admin";
 import ProtectedRoute from "./ProtectedRoute";
-import Customer from "./pages/Customers";
-import Products from "./pages/products";
+import Customer from "./pages/admin/Customers";
+import Products from "./pages/admin/Products";
+import ProductCustomer from "./pages/customer/Product";
 
 const App = () => {
   return (
@@ -19,6 +20,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/product"
+          element={
+            <ProtectedRoute>
+              <ProductCustomer />
             </ProtectedRoute>
           }
         />

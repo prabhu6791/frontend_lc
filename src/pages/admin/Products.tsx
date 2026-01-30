@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import Layout from "../components/Layout";
+import Layout from "../../components/Layout";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Pagination } from "antd";
-import { callApi } from "../services/authService";
+import { callApi } from "../../services/authService";
 import Swal from "sweetalert2";
 
 // ================= TYPES =================

@@ -17,7 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const userLinks = [
     { name: "Home", path: "/dashboard" },
-    { name: "Orders", path: "/orders" },
+    { name: "Orders", path: "/dashboard/product" },
     { name: "Profile", path: "/profile" },
   ];
 
