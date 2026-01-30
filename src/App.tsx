@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./ProtectedRoute";
 import Customer from "./pages/Customers";
+import Products from "./pages/products";
 
 const App = () => {
   return (
@@ -31,11 +32,19 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-                <Route
+        <Route
           path="/admin/customer-control"
           element={
             <ProtectedRoute adminOnly={true}>
               <Customer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/product-control"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <Products />
             </ProtectedRoute>
           }
         />

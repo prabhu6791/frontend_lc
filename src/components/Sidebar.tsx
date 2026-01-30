@@ -11,7 +11,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const adminLinks = [
     { name: "Dashboard", path: "/admin" },
     { name: "Customer", path: "/admin/customer-control" },
-    { name: "Product", path: "/admin/products" },
+    { name: "Product", path: "/admin/product-control" },
     { name: "Settings", path: "/admin/settings" },
   ];
 

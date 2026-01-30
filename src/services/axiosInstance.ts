@@ -1,4 +1,5 @@
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const BASE_URL = "http://localhost:3002";
 
@@ -23,11 +24,14 @@ axiosInstance.interceptors.response.use(
     (error) => {
         if (error.response) {
             if (
-                error.response.status === 401 ||
                 (error.response.data.message &&
                     error.response.data.message.toLowerCase().includes("token expired"))
             ) {
-                alert("You have been logged out due to inactivity or token expiration.")
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'You have been logged out due to inactivity or token expiration.'
+                });
                 localStorage.clear();
 
                 window.location.href = "/";

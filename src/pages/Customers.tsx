@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Modal } from "antd";
+import { Modal, Pagination } from "antd";
 import { callApi } from "../services/authService";
+import Swal from "sweetalert2";
 
 interface CustomerForm {
     name: string;
@@ -18,13 +19,16 @@ interface Customer {
     email: string;
     username: string;
     role?: string;
-    created_at?: string; // optional if API returns it
+    created_at?: string;
 }
 
 interface CustomerResponse {
     success: boolean;
     message: string;
-    count?: number;
+    page: number;
+    limit: number;
+    totalRecords: number;
+    totalPages: number;
     data?: Customer[];
 }
 
@@ -36,6 +40,9 @@ const Customer: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [editingCustomerId, setEditingCustomerId] = useState<number | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [totalRecords, setTotalRecords] = useState<number>(0);
+    const [pageSize, setPageSize] = useState<number>(5);
 
     const [formData, setFormData] = useState<CustomerForm>({
         name: "",
@@ -46,17 +53,28 @@ const Customer: React.FC = () => {
 
     useEffect(() => {
         loadCustomers();
-    }, []);
+    }, [currentPage, pageSize]);
 
     const loadCustomers = async () => {
         try {
-            const res = await callApi<CustomerResponse>("/api/get-all-customers", "GET");
+            const res = await callApi<CustomerResponse>(`/api/get-all-customers?page=${currentPage}&limit=${pageSize}`, "GET");
             if (!res.success) throw new Error(res.message);
             setCustomers(res.data || []);
+            setTotalRecords(res.totalRecords);
+            setPageSize(res.limit);
         } catch (error) {
             console.error("Error loading customers:", error);
-            alert("Failed to load customers. Please try again later.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load customers. Please try again later.'
+            });
         }
+    };
+
+    const handlePageChange = (page: number, pageSize?: number) => {
+        setCurrentPage(page);
+        if (pageSize) setPageSize(pageSize);
     };
 
     const showModal = (customer?: Customer) => {
@@ -89,7 +107,11 @@ const Customer: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.email || !formData.username) {
-            alert("Please fill all required fields");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: 'Please fill all required fields'
+            });
             return;
         }
 
@@ -100,32 +122,66 @@ const Customer: React.FC = () => {
             const res = await callApi<CustomerResponse>(apiPath, method, formData);
 
             if (res.success) {
-                alert(editingCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: editingCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully"
+                });
                 handleCancel();
                 loadCustomers();
             } else {
-                alert(res.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message
+                });
             }
         } catch (error) {
             console.error(error);
-            alert("Server Error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Server Error'
+            });
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm("Are you sure you want to delete this customer?")) return;
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to delete this customer?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
-            const res = await callApi<CustomerResponse>(`/api/customers/${id}`, "DELETE");
+            const res = await callApi<CustomerResponse>(`/api/delete-customers/${id}`, "DELETE");
             if (res.success) {
-                alert("Customer Deleted Successfully");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Customer Deleted Successfully'
+                });
                 loadCustomers();
             } else {
-                alert(res.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message
+                });
             }
         } catch (error) {
             console.error(error);
-            alert("Server Error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Server Error'
+            });
         }
     };
 
@@ -154,7 +210,7 @@ const Customer: React.FC = () => {
                         <tbody>
                             {customers.map((customer, index) => (
                                 <tr key={customer.id}>
-                                    <td>{index + 1}</td>
+                                    <td>{(currentPage - 1) * pageSize + index + 1}</td>
                                     <td>{customer.name}</td>
                                     <td>{customer.username}</td>
                                     <td>{customer.email}</td>
@@ -182,6 +238,16 @@ const Customer: React.FC = () => {
                             )}
                         </tbody>
                     </table>
+                    <div className="d-flex justify-content-end">
+                        <Pagination
+                            current={currentPage}
+                            total={totalRecords}
+                            pageSize={pageSize}
+                            onChange={handlePageChange}
+                            showSizeChanger
+                            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+                        />
+                    </div>
                 </div>
             </div>
 

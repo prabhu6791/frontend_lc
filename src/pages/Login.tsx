@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { callApi } from "../services/authService";
+import Swal from "sweetalert2";
 
 interface LoginResponse {
     user: {
@@ -21,7 +22,7 @@ const Login = () => {
         e.preventDefault();
 
         if (!username.trim() || !password.trim()) {
-            alert('Please enter both username and password');
+            Swal.fire("Error!", "Please enter both username and password", "error");
             return;
         }
 
@@ -46,22 +47,25 @@ const Login = () => {
                     })
                 );
 
-                alert("Login Success");
+                // Show success message and redirect after it's closed
+                await Swal.fire({
+                    title: "Success!",
+                    text: "Login successful",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
-                // Redirect based on role
-                if (res.user.role === "admin") {
-                    window.location.href = "/admin";
-                } else {
-                    window.location.href = "/dashboard";
-                }
-
+                // Redirect based on role using template literal
+                const redirectPath = res.user.role === "admin" ? "/admin" : "/dashboard";
+                window.location.href = redirectPath;
             } else {
-                alert(res.message);
+                Swal.fire("Error!", res.message, "error");
             }
 
         } catch (err) {
             console.error(err);
-            alert("Server Error ");
+            Swal.fire("Error!", "Server Error", "error");
         }
     };
 
