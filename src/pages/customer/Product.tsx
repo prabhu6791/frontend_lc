@@ -38,7 +38,7 @@ const ProductCustomer: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
 
-    // ✅ Pagination states
+    // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(8);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -192,7 +192,7 @@ const ProductCustomer: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* ✅ PAGINATION UI */}
+                        {/* PAGINATION UI */}
                         <div className="d-flex justify-content-end mt-4">
                             <Pagination
                                 current={currentPage}
